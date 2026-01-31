@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS - Dashboard</title>
+    <meta name="description" content="A calm personal life dashboard to track effort and clarity.">
+    <meta name="keywords" content="life tracker, dashboard, productivity, mindfulness">
+    
+    <!-- React & Tailwind -->
+    <script src="https://resource.trickle.so/vendor_lib/unpkg/react@18/umd/react.production.min.js"></script>
+    <script src="https://resource.trickle.so/vendor_lib/unpkg/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://resource.trickle.so/vendor_lib/unpkg/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icons & Charts -->
+    <link href="https://resource.trickle.so/vendor_lib/unpkg/lucide-static@0.516.0/font/lucide.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+    <script>const ChartJS = window.Chart;</script>
+
+    <style type="text/tailwindcss">
+    @layer theme {
+        :root {
+            --primary: #0f172a;
+            --secondary: #64748b;
+        }
+    }
+    @layer utilities {
+        .glass-panel {
+            @apply bg-white border border-slate-200 shadow-sm rounded-xl;
+        }
+        .btn-primary {
+            @apply bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2 justify-center font-medium;
+        }
+        .btn-secondary {
+            @apply bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 justify-center font-medium;
+        }
+    }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <!-- App Logic -->
+    <script type="text/babel" src="utils/date-helpers.js"></script>
+    <script type="text/babel" src="utils/trickle-db.js"></script>
+    <script type="text/babel" src="components/Layout.js"></script>
+    <script type="text/babel" src="app.js"></script>
+</body>
+</html>
