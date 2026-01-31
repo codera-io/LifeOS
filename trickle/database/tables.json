@@ -1,0 +1,190 @@
+[
+  {
+    "name": "categories",
+    "fields": [
+      {
+        "name": "name",
+        "type": "text",
+        "description": "Name of the category",
+        "options": null
+      },
+      {
+        "name": "icon",
+        "type": "text",
+        "description": "Lucide icon name (e.g., icon-briefcase)",
+        "options": null
+      },
+      {
+        "name": "color",
+        "type": "text",
+        "description": "Color code for the category",
+        "options": null
+      },
+      {
+        "name": "weight",
+        "type": "number",
+        "description": "Importance weight of the category",
+        "options": null
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "description": "active or archived",
+        "options": [
+          "active",
+          "archived"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "tracks",
+    "fields": [
+      {
+        "name": "category_id",
+        "type": "text",
+        "description": "ID of the parent category",
+        "options": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "description": "Name of the track system",
+        "options": null
+      },
+      {
+        "name": "type",
+        "type": "text",
+        "description": "Measurement type",
+        "options": [
+          "checkbox",
+          "minutes",
+          "count"
+        ]
+      },
+      {
+        "name": "frequency",
+        "type": "text",
+        "description": "Intended frequency",
+        "options": [
+          "daily",
+          "weekly",
+          "monthly"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "logs",
+    "fields": [
+      {
+        "name": "date",
+        "type": "text",
+        "description": "Date of the log (YYYY-MM-DD)",
+        "options": null
+      },
+      {
+        "name": "track_id",
+        "type": "text",
+        "description": "ID of the track being logged",
+        "options": null
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "description": "Value logged (1 for checkbox, or specific number)",
+        "options": null
+      },
+      {
+        "name": "note",
+        "type": "text",
+        "description": "Optional short note",
+        "options": null
+      }
+    ]
+  },
+  {
+    "name": "finance",
+    "fields": [
+      {
+        "name": "month",
+        "type": "text",
+        "description": "Month of record (YYYY-MM)",
+        "options": null
+      },
+      {
+        "name": "income",
+        "type": "number",
+        "description": "Total income",
+        "options": null
+      },
+      {
+        "name": "expense",
+        "type": "number",
+        "description": "Total expenses",
+        "options": null
+      },
+      {
+        "name": "sip_started",
+        "type": "bool",
+        "description": "Whether SIP/Index fund was started",
+        "options": null
+      },
+      {
+        "name": "learning_sessions",
+        "type": "number",
+        "description": "Count of finance learning sessions",
+        "options": null
+      }
+    ]
+  },
+  {
+    "name": "records",
+    "fields": [
+      {
+        "name": "type",
+        "type": "text",
+        "description": "Type of record",
+        "options": [
+          "book",
+          "skill",
+          "project",
+          "application",
+          "volunteering",
+          "achievement",
+          "other"
+        ]
+      },
+      {
+        "name": "title",
+        "type": "text",
+        "description": "Title or name of the record",
+        "options": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "description": "Description or details",
+        "options": null
+      },
+      {
+        "name": "date",
+        "type": "text",
+        "description": "Date of the record (YYYY-MM-DD)",
+        "options": null
+      },
+      {
+        "name": "category_id",
+        "type": "text",
+        "description": "Associated category ID",
+        "options": null
+      },
+      {
+        "name": "tags",
+        "type": "text",
+        "description": "Comma-separated tags",
+        "options": null
+      }
+    ]
+  }
+]
