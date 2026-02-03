@@ -791,7 +791,6 @@ async function getMonthlyReportData(year, month) {
   
   // Calculate per-track statistics
   const trackStats = activeTracks.map(track => {
-    const trackLogs = logs.filter(log => log.objectData.track_id === track.objectId);
     const category = categories.find(c => c.objectId === track.objectData.category_id);
     
     // Calculate completion rate for this track
@@ -801,6 +800,7 @@ async function getMonthlyReportData(year, month) {
     dailyStats.forEach(dayStat => {
       const dayNum = dayStat.day;
       const checkDate = new Date(year, month, dayNum);
+      const dateStr = formatDate(checkDate);
       
       // Check if this track is due on this day
       const freq = track.objectData.frequency || 'daily';
@@ -819,10 +819,12 @@ async function getMonthlyReportData(year, month) {
       
       if (isDue) {
         totalDueDays++;
-        const hasLog = trackLogs.some(log => {
-          if (track.objectData.type === 'checkbox') return log.objectData.value === 1;
-          return log.objectData.value > 0;
-        });
+        // Check if there's a log for THIS SPECIFIC DATE
+        const hasLog = logs.some(log => 
+          log.objectData.track_id === track.objectId && 
+          log.objectData.date === dateStr &&
+          (track.objectData.type === 'checkbox' ? log.objectData.value === 1 : log.objectData.value > 0)
+        );
         if (hasLog) completedDays++;
       }
     });
@@ -830,7 +832,7 @@ async function getMonthlyReportData(year, month) {
     return {
       track,
       category: category ? category.objectData.name : 'Unknown',
-      totalLogs: trackLogs.length,
+      totalLogs: completedDays,
       completedDays,
       totalDueDays,
       completionRate: totalDueDays > 0 ? (completedDays / totalDueDays) * 100 : 0
