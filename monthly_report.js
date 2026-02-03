@@ -10,7 +10,7 @@ function LoadingSpinner() {
 }
 
 // Summary Card Component
-function SummaryCard({ icon, value, label, trend, trendValue, color = 'slate' }) {
+function SummaryCard({ icon, value, label, color = 'slate' }) {
   const colorClasses = {
     slate: 'bg-slate-50 text-slate-600',
     green: 'bg-green-50 text-green-600',
@@ -25,13 +25,6 @@ function SummaryCard({ icon, value, label, trend, trendValue, color = 'slate' })
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
           <div className={icon}></div>
         </div>
-        {trend && (
-          <div className={`text-sm font-medium ${trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-slate-500'}`}>
-            {trend === 'up' && '↑'}
-            {trend === 'down' && '↓'}
-            {trendValue}
-          </div>
-        )}
       </div>
       <div className="text-2xl font-bold text-slate-900">{value}</div>
       <div className="text-sm text-slate-500">{label}</div>
@@ -39,7 +32,7 @@ function SummaryCard({ icon, value, label, trend, trendValue, color = 'slate' })
   );
 }
 
-// Progress Line Chart Component
+// Progress Line Chart Component - Shows daily completion rate
 function ProgressLineChart({ dailyStats, title }) {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -81,9 +74,7 @@ function ProgressLineChart({ dailyStats, title }) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: false
-          },
+          legend: { display: false },
           tooltip: {
             backgroundColor: '#0f172a',
             titleColor: '#fff',
@@ -97,39 +88,38 @@ function ProgressLineChart({ dailyStats, title }) {
         },
         scales: {
           x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              maxTicksLimit: 10,
-              color: '#94a3b8'
-            }
+            grid: { display: false },
+            ticks: { maxTicksLimit: 10, color: '#94a3b8' }
           },
           y: {
             min: 0,
             max: 100,
-            grid: {
-              color: '#f1f5f9'
-            },
+            grid: { color: '#f1f5f9' },
             ticks: {
               callback: (value) => value + '%',
               color: '#94a3b8'
             }
           }
         },
-        interaction: {
-          intersect: false,
-          mode: 'index'
-        }
+        interaction: { intersect: false, mode: 'index' }
       }
     });
 
     return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
+      if (chartInstance.current) chartInstance.current.destroy();
     };
   }, [dailyStats]);
+
+  if (!dailyStats.length) {
+    return (
+      <div className="glass-panel p-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-4">{title}</h3>
+        <div className="h-64 flex items-center justify-center text-slate-500">
+          No data for this month
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass-panel p-6">
@@ -141,13 +131,21 @@ function ProgressLineChart({ dailyStats, title }) {
   );
 }
 
-// Multi-Track Line Chart Component
-function MultiTrackChart({ trackStats, title }) {
+// Track Comparison Bar Chart - Horizontal bar chart for comparing tracks
+function TrackComparisonChart({ trackStats, title }) {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 
+  // Sort tracks and prepare data outside useEffect
+  const sortedTracks = React.useMemo(() => {
+    if (!trackStats || trackStats.length === 0) return [];
+    return [...trackStats]
+      .sort((a, b) => b.completionRate - a.completionRate)
+      .slice(0, 12);
+  }, [trackStats]);
+
   useEffect(() => {
-    if (!chartRef.current || !trackStats.length) return;
+    if (!chartRef.current || !sortedTracks.length) return;
 
     const ctx = chartRef.current.getContext('2d');
     
@@ -155,74 +153,60 @@ function MultiTrackChart({ trackStats, title }) {
       chartInstance.current.destroy();
     }
 
-    // Color palette for tracks
-    const colors = [
-      '#0f172a', '#3b82f6', '#10b981', '#f59e0b', 
-      '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4',
-      '#84cc16', '#f97316'
-    ];
-
-    // For now, show top 10 tracks by completion rate
-    const topTracks = trackStats
-      .sort((a, b) => b.completionRate - a.completionRate)
-      .slice(0, 10);
-
-    const datasets = topTracks.map((item, index) => ({
-      label: item.track.objectData.name,
-      data: [item.completionRate], // Single value for bar-like display
-      borderColor: colors[index % colors.length],
-      backgroundColor: colors[index % colors.length] + '20',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.4
-    }));
-
     chartInstance.current = new Chart(ctx, {
-      type: 'line',
+      type: 'bar',
       data: {
-        labels: topTracks.map(t => t.track.objectData.name),
-        datasets: datasets
+        labels: sortedTracks.map(t => t.track.objectData.name),
+        datasets: [{
+          label: 'Completion %',
+          data: sortedTracks.map(t => t.completionRate),
+          backgroundColor: sortedTracks.map(t => {
+            const pct = t.completionRate;
+            if (pct >= 80) return '#10b981';
+            if (pct >= 60) return '#3b82f6';
+            if (pct >= 40) return '#f59e0b';
+            return '#94a3b8';
+          }),
+          borderRadius: 4,
+          barPercentage: 0.7,
+          categoryPercentage: 0.8
+        }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
+        devicePixelRatio: 2,
         plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              usePointStyle: true,
-              padding: 20,
-              color: '#64748b'
-            }
-          },
+          legend: { display: false },
           tooltip: {
             backgroundColor: '#0f172a',
             titleColor: '#fff',
             bodyColor: '#fff',
             padding: 12,
-            cornerRadius: 8
+            cornerRadius: 8,
+            callbacks: {
+              label: (context) => `${context.parsed.x.toFixed(1)}% completion`
+            }
           }
         },
         scales: {
           x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              color: '#94a3b8',
-              maxRotation: 45,
-              minRotation: 45
-            }
-          },
-          y: {
             min: 0,
             max: 100,
-            grid: {
-              color: '#f1f5f9'
-            },
+            grid: { color: '#f1f5f9' },
             ticks: {
               callback: (value) => value + '%',
               color: '#94a3b8'
+            }
+          },
+          y: {
+            grid: { display: false },
+            ticks: {
+              color: '#64748b',
+              font: { size: 11, family: 'system-ui' },
+              padding: 20,
+              autoSkip: false
             }
           }
         }
@@ -230,44 +214,66 @@ function MultiTrackChart({ trackStats, title }) {
     });
 
     return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
+      if (chartInstance.current) chartInstance.current.destroy();
     };
-  }, [trackStats]);
+  }, [sortedTracks]);
+
+  if (!sortedTracks.length) {
+    return (
+      <div className="glass-panel p-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-4">{title}</h3>
+        <div className="h-64 flex items-center justify-center text-slate-500">
+          No tracks found
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass-panel p-6">
       <h3 className="text-lg font-bold text-slate-900 mb-4">{title}</h3>
-      <div className="h-80">
+      <div 
+        className="h-auto overflow-visible"
+        style={{ 
+          minHeight: Math.max(sortedTracks.length * 40, 300) + 'px',
+          minWidth: '100%'
+        }}
+      >
         <canvas ref={chartRef}></canvas>
       </div>
     </div>
   );
 }
 
-// Track Progress Bar Component
-function TrackProgressBar({ trackStats }) {
+// Track Progress List Component
+function TrackProgressList({ trackStats }) {
   const sortedTracks = [...trackStats].sort((a, b) => b.completionRate - a.completionRate);
 
   return (
     <div className="glass-panel p-6">
-      <h3 className="text-lg font-bold text-slate-900 mb-4">Track Progress</h3>
+      <h3 className="text-lg font-bold text-slate-900 mb-4">Track Progress ({trackStats.length})</h3>
       <div className="space-y-3">
-        {sortedTracks.slice(0, 15).map((item, index) => {
+        {sortedTracks.map((item) => {
           const percentage = item.completionRate;
           const colorClass = percentage >= 80 ? 'bg-green-500' : percentage >= 60 ? 'bg-blue-500' : percentage >= 40 ? 'bg-yellow-500' : 'bg-slate-300';
           
           return (
             <div key={item.track.objectId} className="flex items-center gap-3">
-              <div className="w-32 text-sm text-slate-600 truncate" title={item.track.objectData.name}>
-                {item.track.objectData.name}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-slate-700 truncate" title={item.track.objectData.name}>
+                  {item.track.objectData.name}
+                </div>
+                <div className="text-xs text-slate-400">
+                  {item.completedDays}/{item.totalDueDays} days • {item.totalLogs} logs
+                </div>
               </div>
-              <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
-                <div 
-                  className={`h-full ${colorClass} transition-all duration-500`} 
-                  style={{ width: `${percentage}%` }}
-                ></div>
+              <div className="w-20">
+                <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className={`h-full ${colorClass} transition-all duration-500`} 
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
               </div>
               <div className="w-12 text-sm font-medium text-slate-700 text-right">
                 {percentage.toFixed(0)}%
@@ -276,61 +282,54 @@ function TrackProgressBar({ trackStats }) {
           );
         })}
       </div>
-      {trackStats.length > 15 && (
-        <div className="mt-4 text-center text-sm text-slate-500">
-          +{trackStats.length - 15} more tracks
-        </div>
-      )}
     </div>
   );
 }
 
 // Monthly Overview Summary Component
-function MonthlyOverviewSummary({ dailyStats, trackStats }) {
+function MonthlyOverviewSummary({ dailyStats, trackStats, monthYear }) {
   const avgCompletion = dailyStats.length > 0 
     ? dailyStats.reduce((sum, d) => sum + d.completionRate, 0) / dailyStats.length 
     : 0;
   
   const perfectDays = dailyStats.filter(d => d.completionRate === 100).length;
   const missedDays = dailyStats.filter(d => d.completionRate === 0 && d.dueCount > 0).length;
-  
-  const topTrack = trackStats.length > 0 
-    ? trackStats.sort((a, b) => b.completionRate - a.completionRate)[0] 
-    : null;
-  
-  const strugglingTrack = trackStats.length > 0 
-    ? trackStats.sort((a, b) => a.completionRate - b.completionRate)[0] 
-    : null;
+  const daysWithLogs = dailyStats.filter(d => d.completedCount > 0).length;
+  const totalDays = dailyStats.filter(d => d.dueCount > 0).length;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <SummaryCard 
-        icon="icon-check-circle" 
-        value={`${avgCompletion.toFixed(1)}%`} 
-        label="Avg. Completion" 
-        color="blue"
-      />
-      <SummaryCard 
-        icon="icon-calendar" 
-        value={perfectDays} 
-        label="Perfect Days" 
-        color="green"
-      />
-      <SummaryCard 
-        icon="icon-target" 
-        value={trackStats.length} 
-        label="Active Tracks" 
-        color="purple"
-      />
-      <SummaryCard 
-        icon="icon-trending-up" 
-        value={missedDays} 
-        label="Missed Days" 
-        color="orange"
-        trend={missedDays === 0 ? 'down' : null}
-        trendValue={missedDays === 0 ? 'Great!' : ''}
-      />
-    </div>
+    <>
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-900">{monthYear}</h2>
+        <p className="text-slate-500">Monthly Progress Report</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <SummaryCard 
+          icon="icon-check-circle" 
+          value={`${avgCompletion.toFixed(1)}%`} 
+          label="Avg. Completion" 
+          color="blue"
+        />
+        <SummaryCard 
+          icon="icon-calendar" 
+          value={perfectDays} 
+          label="Perfect Days" 
+          color="green"
+        />
+        <SummaryCard 
+          icon="icon-target" 
+          value={`${daysWithLogs}/${totalDays}`} 
+          label="Days Active" 
+          color="purple"
+        />
+        <SummaryCard 
+          icon="icon-alert-circle" 
+          value={missedDays} 
+          label="Missed Days" 
+          color="orange"
+        />
+      </div>
+    </>
   );
 }
 
@@ -355,33 +354,45 @@ function MonthSelector({ currentDate, onMonthChange }) {
     onMonthChange(new Date());
   };
 
+  // Check if current view is current month
+  const today = new Date();
+  const isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+
   return (
     <div className="flex items-center justify-between mb-6">
-      <h2 className="text-xl font-bold text-slate-900">
-        {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-      </h2>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-4">
         <button onClick={handlePrevMonth} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <div className="icon-chevron-left"></div>
         </button>
-        <button onClick={handleToday} className="px-3 py-2 text-sm font-medium hover:bg-slate-100 rounded-lg transition-colors">
-          Today
-        </button>
+        <h2 className="text-xl font-bold text-slate-900 min-w-[160px] text-center">
+          {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+        </h2>
         <button onClick={handleNextMonth} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
           <div className="icon-chevron-right"></div>
         </button>
       </div>
+      {!isCurrentMonth && (
+        <button onClick={handleToday} className="btn-secondary text-sm">
+          <div className="icon-calendar"></div>
+          Current Month
+        </button>
+      )}
     </div>
   );
 }
 
 // Main Monthly Report Component
 function MonthlyReport() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    // Default to current month
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Load data when month changes
   useEffect(() => {
     loadReportData();
   }, [currentDate]);
@@ -402,6 +413,51 @@ function MonthlyReport() {
 
   const navigateToDashboard = () => {
     window.location.href = 'index.html';
+  };
+
+  const exportReport = async () => {
+    const reportContent = document.getElementById('report-content');
+    if (!reportContent) return;
+    
+    // Store original styles
+    const originalWidth = reportContent.style.width;
+    const originalOverflow = reportContent.style.overflow;
+    
+    try {
+      // Temporarily expand for better capture
+      reportContent.style.width = '100%';
+      
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const canvas = await html2canvas(reportContent, {
+        backgroundColor: '#f8fafc',
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        width: reportContent.offsetWidth,
+        height: reportContent.offsetHeight,
+        onclone: (clonedDoc) => {
+          const clonedContent = clonedDoc.getElementById('report-content');
+          if (clonedContent) {
+            clonedContent.style.width = '100%';
+          }
+        }
+      });
+      
+      const link = document.createElement('a');
+      link.download = `monthly-report-${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Failed to export report:', error);
+      alert('Failed to export report. Please try again.');
+    } finally {
+      // Restore original styles
+      reportContent.style.width = originalWidth;
+    }
   };
 
   if (loading) {
@@ -429,7 +485,9 @@ function MonthlyReport() {
     );
   }
 
-  const { dailyStats, trackStats, year, month } = reportData;
+  const { dailyStats, trackStats } = reportData;
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthYear = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -443,6 +501,14 @@ function MonthlyReport() {
             <h1 className="text-xl font-bold text-slate-900">Monthly Report</h1>
           </div>
           <div className="flex gap-2">
+            <button 
+              onClick={exportReport}
+              className="btn-secondary text-sm"
+              title="Export as PNG"
+            >
+              <div className="icon-download"></div>
+              Export
+            </button>
             <button 
               onClick={() => setActiveTab('overview')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -461,33 +527,37 @@ function MonthlyReport() {
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Tracks
+              All Tracks
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 py-6" id="report-content">
         <MonthSelector currentDate={currentDate} onMonthChange={setCurrentDate} />
 
         {activeTab === 'overview' && (
           <>
-            <MonthlyOverviewSummary dailyStats={dailyStats} trackStats={trackStats} />
+            <MonthlyOverviewSummary dailyStats={dailyStats} trackStats={trackStats} monthYear={monthYear} />
             <ProgressLineChart 
               dailyStats={dailyStats} 
-              title="Daily Progress Throughout the Month" 
+              title="Daily Completion Rate" 
             />
           </>
         )}
 
         {activeTab === 'tracks' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MultiTrackChart 
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-slate-900 mb-2">All Tracks - {monthYear}</h2>
+              <p className="text-slate-500">Track-by-track progress breakdown</p>
+            </div>
+            <TrackComparisonChart 
               trackStats={trackStats} 
-              title="Track Performance Comparison" 
+              title="Track Comparison" 
             />
-            <TrackProgressBar trackStats={trackStats} />
+            <TrackProgressList trackStats={trackStats} />
           </div>
         )}
       </main>
